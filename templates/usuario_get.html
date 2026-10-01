@@ -41,6 +41,11 @@
 						</a>
 					</div>
 				</td>
+				<td>
+					{% if u.imagem %}
+						<img src="{{ url_for('static', filename=u.imagem) }}" alt="{{ u.nome }}" class="h-32 w-full object-cover rounded-lg"> 
+					{% endif %}
+				</td>
 			</tr>
 			{% endfor %}
 		</tbody>

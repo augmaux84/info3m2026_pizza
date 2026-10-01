@@ -17,6 +17,7 @@
         <span><span class="block font-medium">Administrador</span><span class="text-sm text-base-content/60">Permite acessar os recursos administrativos.</span></span>
         <input type="checkbox" name="administrador" class="toggle toggle-primary" {% if u.administrador %}checked{% endif %} />
       </label>
+      <input class="file-input file-input-bordered w-full" type="file" name="imagem" accept="image/png,image/jpeg,image/webp">
       <div class="card-actions justify-end"><a href="{{ url_for('usuario.get') }}" class="btn btn-ghost">Cancelar</a><button type="submit" class="btn btn-primary">Salvar alterações</button></div>
     </div>
   </form>

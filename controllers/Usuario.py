@@ -4,6 +4,9 @@ from models import Usuario
 from utils import db, lm
 from flask import Blueprint
 from flask_login import login_user, logout_user, login_required, current_user
+from werkzeug.utils import secure_filename
+
+EXTENSOES_PERMITIDAS = {'png', 'jpg', 'jpeg', 'webp'}
 
 bp_usuario = Blueprint("usuario", __name__, template_folder='templates')
 
@@ -22,16 +25,34 @@ def get():
 def add():
 	if request.method=="GET":
 		return render_template('usuario_add.html')
-	elif request.method=="POST":
-		nome = request.form.get('nome')
-		email = request.form.get('email')
-		senha = generate_password_hash(request.form.get('senha'))
-		administrador = request.form.get('administrador') == 'on'
-		u = Usuario(nome, email, senha, administrador)
-		db.session.add(u)
-		db.session.commit()
-		flash('Dados adicionados com sucesso', 'success')
-		return redirect(url_for('.get'))
+
+	arquivo = request.files.get('imagem')
+	caminho_imagem = None
+
+	if arquivo and arquivo.filename != '':
+		nome = secure_filename(arquivo.filename)
+		extensao = arquivo.filename.split('.')[-1].lower()
+		if extensao not in EXTENSOES_PERMITIDAS:
+			flash('Formato de imagem inválido. Formatos permitidos: PNG, JPG, JPEG, WEBP.', 'error')
+			return redirect(url_for('.add'))
+
+		novo_nome = f"{uuid.uuid4().hex}.{extensao}"
+		caminho = os.path.join(current_app.config['UPLOAD_FOLDER'], novo_nome)
+		arquivo.save(caminho)
+		caminho_imagem = f"uploads/users/{novo_nome}"  # Caminho relativo para uso no HTML
+		
+	user = Usuario(
+		request.form.get('nome'), 
+		request.form.get('email'), 
+		generate_password_hash(request.form.get('senha')), 
+		caminho_imagem,
+		request.form.get('administrador') == 'on'
+	)
+		
+	db.session.add(user)
+	db.session.commit()
+	flash('Dados adicionados com sucesso', 'success')
+	return redirect(url_for('.get'))
 
 @bp_usuario.route('/update/<int:id>', methods=['GET', 'POST'])
 def update(id):
@@ -39,9 +60,29 @@ def update(id):
 	if request.method=="GET":
 		return render_template('usuario_update.html', u=u)
 	elif request.method=="POST":
-		u.nome = request.form.get('nome')
-		u.email = request.form.get('email')
-		u.administrador = request.form.get('administrador') == 'on'
+		arquivo = request.files.get('imagem')
+		caminho_imagem = None
+
+		if arquivo and arquivo.filename != '':
+			nome = secure_filename(arquivo.filename)
+			extensao = arquivo.filename.split('.')[-1].lower()
+			if extensao not in EXTENSOES_PERMITIDAS:
+				flash('Formato de imagem inválido. Formatos permitidos: PNG, JPG, JPEG, WEBP.', 'error')
+				return redirect(url_for('.add'))
+
+			novo_nome = f"{uuid.uuid4().hex}.{extensao}"
+			caminho = os.path.join(current_app.config['UPLOAD_FOLDER'], novo_nome)
+			arquivo.save(caminho)
+			caminho_imagem = f"uploads/users/{novo_nome}"  # Caminho relativo para uso no HTML
+			
+		user = Usuario(
+			request.form.get('nome'), 
+			request.form.get('email'), 
+			generate_password_hash(request.form.get('senha')), 
+			caminho_imagem,
+			request.form.get('administrador') == 'on'
+		)
+
 		db.session.add(u)
 		db.session.commit()
 		flash('Dados atualizados com sucesso', 'success')
